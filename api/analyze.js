@@ -205,7 +205,7 @@ Przeanalizuj i podaj:
 2. **Co jest OK** - jakie wymagania kandydat spełnia
 3. **Czego brakuje** - kluczowe braki w CV względem oferty
 4. **Konkretne zmiany** - co dodać/zmienić w CV (punkty)
-5. **Słowa kluczowe** - jakie buzzwords dodać
+5. **Słowa kluczowe** - słowa kluczowe z URL do profesjonalnych źródeł (Agile Alliance, ISTQB, Atlassian, itp.)
 
 Odpowiedź w języku polskim, maksymalnie 1500 znaków.`
           }
