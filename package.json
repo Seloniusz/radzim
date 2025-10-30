@@ -1,0 +1,20 @@
+{
+  "name": "radzim",
+  "version": "1.0.0",
+  "description": "AI-powered CV analyzer for job applications",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "formidable": "^3.5.1",
+    "mammoth": "^1.6.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}
