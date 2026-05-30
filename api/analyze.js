@@ -165,11 +165,330 @@ async function extractCVText(file) {
   }
 }
 
-async function analyzeWithAI(jobDescription, cvContent) {
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-  if (!OPENAI_API_KEY) {
-    throw new Error('Brak klucza OPENAI_API_KEY w zmiennych środowiskowych');
+const CV_ANALYSIS_CHAR_LIMIT = Number.parseInt(process.env.CV_ANALYSIS_CHAR_LIMIT || '9000', 10);
+const JOB_ANALYSIS_CHAR_LIMIT = Number.parseInt(process.env.JOB_ANALYSIS_CHAR_LIMIT || '8000', 10);
+
+const LOW_VALUE_CV_PATTERNS = [
+  /wyrażam zgodę/i,
+  /wyrazam zgode/i,
+  /przetwarzanie danych osobowych/i,
+  /rodo/i,
+  /gdpr/i,
+  /references available/i,
+  /^curriculum vitae$/i,
+  /^page \d+ of \d+$/i,
+  /^strona \d+ z \d+$/i,
+  /^[\w.+-]+@[\w.-]+\.[a-z]{2,}$/i,
+  /^\+?\d[\d\s().-]{7,}$/
+];
+
+const CV_SECTION_RULES = [
+  {
+    key: 'summary',
+    label: 'Podsumowanie / profil',
+    priority: 1,
+    heading: /^(podsumowanie|profil|o mnie|summary|profile|about me|professional summary)\b/i
+  },
+  {
+    key: 'experience',
+    label: 'Doświadczenie zawodowe',
+    priority: 2,
+    heading: /^(doświadczenie zawodowe|doswiadczenie zawodowe|work experience|historia zatrudnienia|praca zawodowa|doświadczenie|doswiadczenie|experience|employment)\b/i
+  },
+  {
+    key: 'projects',
+    label: 'Projekty',
+    priority: 3,
+    heading: /^(projekty|projects|portfolio|selected projects|wybrane projekty)\b/i
+  },
+  {
+    key: 'skills',
+    label: 'Umiejętności / technologie',
+    priority: 4,
+    heading: /^(umiejętności|umiejetnosci|kompetencje|technologie|skills|technical skills|tech stack|stack|narzędzia|narzedzia)\b/i
+  },
+  {
+    key: 'certifications',
+    label: 'Certyfikaty / kursy',
+    priority: 5,
+    heading: /^(certyfikaty|certificates|certifications|kursy|courses|szkolenia|training)\b/i
+  },
+  {
+    key: 'education',
+    label: 'Edukacja',
+    priority: 6,
+    heading: /^(edukacja|wykształcenie|wyksztalcenie|education|studia|university)\b/i
+  },
+  {
+    key: 'languages',
+    label: 'Języki',
+    priority: 7,
+    heading: /^(języki|jezyki|languages|language skills)\b/i
+  }
+];
+
+const STOPWORDS = new Set([
+  'oraz', 'albo', 'jest', 'dla', 'jak', 'lub', 'the', 'and', 'with', 'from', 'that', 'this',
+  'praca', 'pracy', 'oferta', 'firmy', 'firma', 'candidate', 'requirements', 'experience',
+  'minimum', 'mile', 'widziane', 'będzie', 'bedzie', 'about', 'your', 'you', 'are', 'will'
+]);
+
+function normalizeText(text) {
+  return String(text || '')
+    .replace(/\u0000/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/[\t ]+/g, ' ')
+    .replace(/\s+(?=(podsumowanie|profil|o mnie|summary|profile|doświadczenie|doswiadczenie|experience|projekty|projects|umiejętności|umiejetnosci|skills|edukacja|education|certyfikaty|certifications|języki|jezyki|languages|wyrażam zgodę|wyrazam zgode|przetwarzanie danych osobowych|rodo|gdpr)(?:\s|:|$))/gi, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function truncateToWordBoundary(text, maxLength) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+
+  return `${truncated.slice(0, lastSpace > 200 ? lastSpace : maxLength).trim()}…`;
+}
+
+function normalizeLine(line) {
+  return line
+    .replace(/^[•·*\-–—]+\s*/, '')
+    .replace(/[:：]+$/, '')
+    .trim();
+}
+
+function containsLikelyPhoneNumber(text) {
+  const match = text.match(/(?:\+\d{1,3}[\s().-]*)?(?:\d[\s().-]*){9,}/);
+  return Boolean(match && match[0].replace(/\D/g, '').length >= 9);
+}
+
+function isLowValueCVLine(line) {
+  const trimmed = line.trim();
+  const containsContact = /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(trimmed) || containsLikelyPhoneNumber(trimmed);
+
+  return LOW_VALUE_CV_PATTERNS.some(pattern => pattern.test(trimmed)) || (containsContact && trimmed.length < 180);
+}
+
+function getSectionMatch(line) {
+  const normalized = normalizeLine(line);
+
+  if (!normalized || normalized.length > 220) {
+    return null;
+  }
+
+  for (const rule of CV_SECTION_RULES) {
+    const match = normalized.match(rule.heading);
+
+    if (match) {
+      return {
+        rule,
+        remainder: normalized.slice(match[0].length).replace(/^[\s:：–—-]+/, '').trim()
+      };
+    }
+  }
+
+  return null;
+}
+
+function splitCVIntoSections(cvText) {
+  const sections = new Map();
+  let currentKey = 'other';
+
+  sections.set('other', {
+    key: 'other',
+    label: 'Inne istotne informacje',
+    priority: 99,
+    lines: []
+  });
+
+  for (const rawLine of normalizeText(cvText).split('\n')) {
+    const line = normalizeLine(rawLine);
+
+    if (!line || isLowValueCVLine(line)) {
+      continue;
+    }
+
+    const sectionMatch = getSectionMatch(line);
+
+    if (sectionMatch) {
+      currentKey = sectionMatch.rule.key;
+
+      if (!sections.has(currentKey)) {
+        sections.set(currentKey, {
+          key: sectionMatch.rule.key,
+          label: sectionMatch.rule.label,
+          priority: sectionMatch.rule.priority,
+          lines: []
+        });
+      }
+
+      if (sectionMatch.remainder && !isLowValueCVLine(sectionMatch.remainder)) {
+        sections.get(currentKey).lines.push(sectionMatch.remainder);
+      }
+
+      continue;
+    }
+
+    sections.get(currentKey).lines.push(line);
+  }
+
+  return Array.from(sections.values()).filter(section => section.lines.length > 0);
+}
+
+function extractJobKeywords(jobDescription) {
+  const words = normalizeText(jobDescription)
+    .toLowerCase()
+    .match(/[a-ząćęłńóśźż0-9+#./-]{3,}/gi) || [];
+
+  const counts = new Map();
+
+  for (const word of words) {
+    const normalized = word.replace(/^[^a-ząćęłńóśźż0-9+#]+|[^a-ząćęłńóśźż0-9+#]+$/gi, '');
+
+    if (!normalized || STOPWORDS.has(normalized) || normalized.length < 3) {
+      continue;
+    }
+
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  }
+
+  return new Set(
+    Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 80)
+      .map(([word]) => word)
+  );
+}
+
+function scoreCVLine(line, jobKeywords) {
+  const lower = line.toLowerCase();
+  let score = 0;
+
+  for (const keyword of jobKeywords) {
+    if (lower.includes(keyword)) {
+      score += 3;
+    }
+  }
+
+  if (/\b(19|20)\d{2}\b/.test(line)) score += 1;
+  if (/\b\d+[%+]?\b/.test(line)) score += 1;
+  if (/[A-Z][a-zA-Z]+\.?js\b|\b(react|node|python|java|sql|aws|azure|docker|kubernetes|typescript|javascript|cypress|selenium|jira|scrum|agile|ci\/cd)\b/i.test(line)) score += 2;
+  if (/\b(wdrożyłem|wdrozylem|zbudowałem|zbudowalem|prowadziłem|prowadzilem|managed|built|implemented|delivered|improved|reduced|increased)\b/i.test(line)) score += 2;
+
+  return score;
+}
+
+function selectSectionLines(section, jobKeywords, charBudget) {
+  const lineLimit = Math.max(500, Math.min(1200, Math.floor(charBudget / 2)));
+  const lines = section.lines.map(line => truncateToWordBoundary(line, lineLimit));
+  const fullText = lines.join('\n');
+
+  if (fullText.length <= charBudget) {
+    return fullText;
+  }
+
+  const selectedIndexes = new Set();
+  const mandatoryCount = section.key === 'summary' ? 4 : 2;
+
+  for (let i = 0; i < Math.min(mandatoryCount, lines.length); i += 1) {
+    if ((lines[i].length + 1) <= charBudget) {
+      selectedIndexes.add(i);
+    }
+  }
+
+  const scoredLines = lines
+    .map((line, index) => ({ line, index, score: scoreCVLine(line, jobKeywords) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  let currentLength = Array.from(selectedIndexes)
+    .reduce((length, index) => length + lines[index].length + 1, 0);
+
+  for (const item of scoredLines) {
+    if (selectedIndexes.has(item.index) || item.score <= 0) {
+      continue;
+    }
+
+    const nextLength = currentLength + item.line.length + 1;
+
+    if (nextLength > charBudget) {
+      continue;
+    }
+
+    selectedIndexes.add(item.index);
+    currentLength = nextLength;
+  }
+
+  return Array.from(selectedIndexes)
+    .sort((a, b) => a - b)
+    .map(index => lines[index])
+    .join('\n');
+}
+
+function prepareCVForAnalysis(cvText, jobDescription) {
+  const maxChars = Number.isFinite(CV_ANALYSIS_CHAR_LIMIT) ? CV_ANALYSIS_CHAR_LIMIT : 9000;
+  const jobKeywords = extractJobKeywords(jobDescription);
+  const rawSections = splitCVIntoSections(cvText);
+  const hasNamedSections = rawSections.some(section => section.key !== 'other');
+  const sections = rawSections
+    .map(section => {
+      if (section.key !== 'other' || !hasNamedSections) {
+        return section;
+      }
+
+      return {
+        ...section,
+        lines: section.lines.filter(line => scoreCVLine(line, jobKeywords) > 0)
+      };
+    })
+    .filter(section => section.lines.length > 0)
+    .sort((a, b) => a.priority - b.priority);
+
+  const parts = [];
+  let remainingChars = Math.max(maxChars, 2000);
+
+  for (const section of sections) {
+    const header = `## ${section.label}`;
+    const sectionBudget = remainingChars - header.length - 2;
+
+    if (sectionBudget < 300) {
+      break;
+    }
+
+    const body = selectSectionLines(section, jobKeywords, sectionBudget);
+
+    if (!body) {
+      continue;
+    }
+
+    const part = `${header}\n${body}`;
+    parts.push(part);
+    remainingChars -= part.length + 2;
+  }
+
+  if (parts.length === 0) {
+    return normalizeText(cvText).slice(0, maxChars);
+  }
+
+  return parts.join('\n\n');
+}
+
+function prepareJobForAnalysis(jobDescription) {
+  const maxChars = Number.isFinite(JOB_ANALYSIS_CHAR_LIMIT) ? JOB_ANALYSIS_CHAR_LIMIT : 8000;
+  return normalizeText(jobDescription).slice(0, Math.max(maxChars, 2000));
+}
+
+async function analyzeWithAI(jobDescription, cvContent) {
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+  const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
+  const APP_URL = process.env.APP_URL || 'https://radzim.vercel.app';
+
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('Brak klucza OPENROUTER_API_KEY w zmiennych środowiskowych');
   }
 
   if (!cvContent || cvContent.trim().length < 50) {
@@ -180,43 +499,63 @@ async function analyzeWithAI(jobDescription, cvContent) {
     throw new Error('Opis oferty jest pusty lub zbyt krótki');
   }
 
+  const jobForAnalysis = prepareJobForAnalysis(jobDescription);
+  const cvForAnalysis = prepareCVForAnalysis(cvContent, jobDescription);
+  console.log('Prepared job length:', jobForAnalysis.length);
+  console.log('Prepared CV length:', cvForAnalysis.length);
+
   try {
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'gpt-4o-mini',
+        model: OPENROUTER_MODEL,
         messages: [
           {
             role: 'system',
-            content: 'Jesteś ekspertem HR i career coachem. Pomagasz kandydatom dostosować CV do konkretnych ofert pracy. Piszesz po polsku, konkretnie i rzeczowo.'
+            content: 'Jesteś ekspertem HR i career coachem. Pomagasz kandydatom dostosować CV do konkretnych ofert pracy. Piszesz po polsku, konkretnie i rzeczowo. Zwracasz wyłącznie poprawny JSON.'
           },
           {
             role: 'user',
-            content: `Przeanalizuj CV kandydata względem oferty pracy i podaj konkretne rekomendacje.
+            content: `Przeanalizuj CV kandydata względem oferty pracy i podaj konkretne rekomendacje w formacie JSON.
 
 OFERTA PRACY:
-${jobDescription.substring(0, 6000)}
+${jobForAnalysis}
 
-CV KANDYDATA:
-${cvContent.substring(0, 6000)}
+CV KANDYDATA — wybrane najważniejsze sekcje z pełnego CV:
+${cvForAnalysis}
 
-Przeanalizuj i podaj:
-1. **Dopasowanie ogólne** - na ile CV pasuje do oferty (%)
-2. **Co jest OK** - jakie wymagania kandydat spełnia
-3. **Czego brakuje** - kluczowe braki w CV względem oferty
-4. **Konkretne zmiany** - co dodać/zmienić w CV (punkty)
-5. **Słowa kluczowe** - słowa kluczowe z URL do profesjonalnych źródeł (Agile Alliance, ISTQB, Atlassian, itp.)
+Odpowiedz w formacie JSON:
+{
+  "matchPercentage": 85,
+  "whatWorks": ["punkt 1", "punkt 2", "punkt 3"],
+  "whatsMissing": ["punkt 1", "punkt 2"],
+  "concreteChanges": ["punkt 1", "punkt 2", "punkt 3"],
+  "keywords": [
+    {"term": "Agile", "url": "https://agilealliance.org/agile101/agile-glossary/"},
+    {"term": "CI/CD", "url": "https://www.atlassian.com/devops/continuous-delivery-tutorials/continuous-integration"},
+    {"term": "Test Automation", "url": "https://glossary.istqb.org"}
+  ]
+}
 
-Odpowiedź w języku polskim, maksymalnie 1500 znaków.`
+Zwróć uwagę:
+- matchPercentage: liczba 0-100
+- whatWorks: lista umiejętności które kandydat spełnia
+- whatsMissing: lista kluczowych braków
+- concreteChanges: konkretne propozycje zmian w CV
+- keywords: słowa kluczowe z URL do profesjonalnych źródeł (Agile Alliance, ISTQB, Atlassian, itp.)
+
+Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego tekstu.`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.4,
         max_tokens: 1500
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': APP_URL,
+          'X-Title': 'Radzim'
         },
         timeout: 30000
       }
@@ -224,15 +563,18 @@ Odpowiedź w języku polskim, maksymalnie 1500 znaków.`
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('OpenAI error:', error.response?.data || error.message);
+    console.error('OpenRouter error:', error.response?.data || error.message);
     
     if (error.response?.status === 401) {
-      throw new Error('Nieprawidłowy klucz OpenAI API');
+      throw new Error('Nieprawidłowy klucz OpenRouter API');
+    }
+    if (error.response?.status === 402) {
+      throw new Error('OpenRouter odrzucił zapytanie przez limit lub brak dostępnych środków');
     }
     if (error.response?.status === 429) {
-      throw new Error('Przekroczono limit zapytań OpenAI. Spróbuj za chwilę.');
+      throw new Error('Przekroczono limit zapytań darmowego modelu OpenRouter. Spróbuj za chwilę.');
     }
     
-    throw new Error(`Błąd OpenAI: ${error.response?.data?.error?.message || error.message}`);
+    throw new Error(`Błąd OpenRouter: ${error.response?.data?.error?.message || error.message}`);
   }
 }
