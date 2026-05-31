@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
@@ -58,4 +59,20 @@ test('page parses structured analysis and renders HTML instead of raw JSON', () 
   assert.match(indexSource, /JSON\.parse\(data\.analysis\)/);
   assert.match(indexSource, /renderAnalysisReport\(analysis\)/);
   assert.doesNotMatch(indexSource, /analysisContent\.textContent = data\.analysis/);
+});
+
+test('exposes browser renderer even when a CommonJS module global exists', () => {
+  const rendererSource = fs.readFileSync(
+    path.join(projectRoot, 'analysis-renderer.js'),
+    'utf8'
+  );
+  const context = {
+    module: { exports: {} },
+    URL
+  };
+
+  vm.runInNewContext(rendererSource, context);
+
+  assert.equal(typeof context.renderAnalysisReport, 'function');
+  assert.equal(typeof context.module.exports.renderAnalysisReport, 'function');
 });

@@ -3,7 +3,9 @@
 
   if (typeof module === 'object' && module.exports) {
     module.exports = api;
-  } else {
+  }
+
+  if (root) {
     root.renderAnalysisReport = api.renderAnalysisReport;
   }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function createAnalysisRenderer() {
