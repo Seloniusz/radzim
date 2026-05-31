@@ -62,7 +62,15 @@ body {
     color: var(--hot-pink);
 }
 
+.masthead-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .system-label,
+.privacy-link,
 .report-kicker,
 .report-command,
 .match-score small,
@@ -74,11 +82,29 @@ body {
     text-transform: uppercase;
 }
 
-.system-label {
+.system-label,
+.privacy-link {
     padding: 7px 10px;
-    background: var(--cyan);
     border: var(--line);
     border-radius: 999px;
+}
+
+.system-label {
+    background: var(--cyan);
+}
+
+.privacy-link {
+    color: var(--ink);
+    background: var(--paper-soft);
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.privacy-link:hover,
+.privacy-link:focus-visible {
+    background: var(--neon-green);
+    outline: none;
+    transform: translateY(-2px);
 }
 
 .header-copy {
@@ -531,6 +557,85 @@ input[type="file"]:focus {
     transform: translateY(-2px);
 }
 
+.wordmark-link {
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.privacy-header {
+    display: grid;
+    gap: 48px;
+    padding: 34px 42px 42px;
+    border-bottom: var(--line);
+}
+
+.privacy-kicker {
+    margin-bottom: 14px;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.privacy-header h1 {
+    max-width: 820px;
+    font-size: clamp(4rem, 9vw, 7.4rem);
+    font-weight: 950;
+    letter-spacing: -0.12em;
+    line-height: 0.86;
+}
+
+.privacy-lead {
+    max-width: 680px;
+    margin-top: 22px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.privacy-content {
+    display: grid;
+    max-width: 900px;
+    gap: 16px;
+    margin: 0 auto;
+    padding: 34px 42px 44px;
+}
+
+.privacy-content section {
+    padding: 20px;
+    background: var(--paper-soft);
+    border: var(--line);
+    border-radius: var(--radius-md);
+}
+
+.privacy-content h2 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+.privacy-content p,
+.privacy-content li {
+    line-height: 1.6;
+}
+
+.privacy-content p + p,
+.privacy-content ul + p {
+    margin-top: 10px;
+}
+
+.privacy-content ul {
+    display: grid;
+    gap: 6px;
+    padding-left: 20px;
+}
+
+.privacy-content a {
+    color: var(--ink);
+    font-weight: 700;
+}
+
 @media (max-width: 760px) {
     body {
         padding: 0;
@@ -543,6 +648,8 @@ input[type="file"]:focus {
     }
 
     .header,
+    .privacy-header,
+    .privacy-content,
     .form-section,
     .results {
         padding-right: 18px;
@@ -566,6 +673,18 @@ input[type="file"]:focus {
 
     .masthead {
         align-items: flex-start;
+    }
+
+    .masthead-actions {
+        justify-content: flex-start;
+    }
+
+    .privacy-header h1 {
+        font-size: clamp(3.6rem, 17vw, 4.8rem);
+    }
+
+    .privacy-content {
+        padding-top: 24px;
     }
 
     .form-section {

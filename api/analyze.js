@@ -27,6 +27,7 @@ module.exports = async function handler(req, res) {
   }
 
   console.log('=== START REQUEST ===');
+  const temporaryFilepaths = [];
 
   try {
     // Parsowanie formularza
@@ -34,6 +35,10 @@ module.exports = async function handler(req, res) {
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024,
       keepExtensions: true,
+    });
+
+    form.on('fileBegin', (_, file) => {
+      temporaryFilepaths.push(file.filepath);
     });
 
     const [fields, files] = await new Promise((resolve, reject) => {
@@ -47,18 +52,12 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    console.log('Fields:', fields);
-    console.log('Files:', Object.keys(files));
-
     const jobUrl = Array.isArray(fields.jobUrl) ? fields.jobUrl[0] : fields.jobUrl;
     const cvFile = Array.isArray(files.cv) ? files.cv[0] : files.cv;
 
     if (!jobUrl || !cvFile) {
       throw new Error('Brak wymaganych danych (jobUrl lub cv)');
     }
-
-    console.log('Job URL:', jobUrl);
-    console.log('CV file:', cvFile.originalFilename, cvFile.mimetype);
 
     // 1. Pobierz ofertę pracy
     console.log('Fetching job offer...');
@@ -78,14 +77,24 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ analysis });
 
   } catch (error) {
-    console.error('=== ERROR ===');
-    console.error('Message:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('Analysis request failed:', error.message);
     
     return res.status(500).json({ 
       error: error.message || 'Wystąpił nieznany błąd',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  } finally {
+    await Promise.all(
+      temporaryFilepaths.map(async filepath => {
+        try {
+          await fs.unlink(filepath);
+        } catch (error) {
+          if (error.code !== 'ENOENT') {
+            console.error('Temporary CV cleanup failed:', error.message);
+          }
+        }
+      })
+    );
   }
 };
 
@@ -486,8 +495,8 @@ function prepareJobForAnalysis(jobDescription) {
 
 async function analyzeWithAI(jobDescription, cvContent) {
   const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-  const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
-  const APP_URL = process.env.APP_URL || 'https://radzim.vercel.app';
+  const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'qwen/qwen3-next-80b-a3b-instruct:free';
+  const APP_URL = process.env.APP_URL || 'https://radzim.app';
 
   if (!OPENROUTER_API_KEY) {
     throw new Error('Brak klucza OPENROUTER_API_KEY w zmiennych środowiskowych');
@@ -561,7 +570,8 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
         temperature: 0.4,
         max_tokens: 1500,
         response_format: { type: 'json_object' },
-        reasoning: { effort: 'none', exclude: true }
+        reasoning: { effort: 'none', exclude: true },
+        provider: { zdr: true, require_parameters: true }
       },
       {
         headers: {
@@ -576,7 +586,7 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
 
     return normalizeAnalysisContent(response.data.choices[0].message.content);
   } catch (error) {
-    console.error('OpenRouter error:', error.response?.data || error.message);
+    console.error('OpenRouter request failed:', error.response?.status || error.message);
     
     if (error.response?.status === 401) {
       throw new Error('Nieprawidłowy klucz OpenRouter API');

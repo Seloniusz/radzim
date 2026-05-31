@@ -102,3 +102,12 @@ test('visible interface labels do not imitate shell commands', () => {
   assert.doesNotMatch(rendererSource, /\$\s*[a-z_]/i);
   assert.doesNotMatch(rendererSource, /--[a-z_=-]+/i);
 });
+
+test('masthead exposes a compact privacy policy link', () => {
+  assert.match(indexSource, /class="masthead-actions"/);
+  assert.match(
+    indexSource,
+    /class="privacy-link" href="\/polityka-prywatnosci\.html">polityka prywatności<\/a>/
+  );
+  assert.match(stylesSource, /\.privacy-link\s*{/);
+});

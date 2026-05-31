@@ -46,3 +46,30 @@ test('OpenRouter prompt requests dynamic competency ratings', () => {
   assert.match(analyzeSource, /score: liczba całkowita 1-5/);
   assert.match(analyzeSource, /dobierz dynamicznie do analizowanej oferty/);
 });
+
+test('temporary CV files are deleted after every analysis attempt', () => {
+  assert.match(analyzeSource, /form\.on\('fileBegin'/);
+  assert.match(analyzeSource, /finally\s*{/);
+  assert.match(analyzeSource, /await fs\.unlink\(filepath\)/);
+});
+
+test('OpenRouter analysis enforces zero data retention routing', () => {
+  assert.match(
+    analyzeSource,
+    /provider:\s*\{\s*zdr:\s*true,\s*require_parameters:\s*true\s*\}/
+  );
+  assert.match(
+    analyzeSource,
+    /process\.env\.APP_URL \|\| 'https:\/\/radzim\.app'/
+  );
+  assert.match(
+    analyzeSource,
+    /process\.env\.OPENROUTER_MODEL \|\| 'qwen\/qwen3-next-80b-a3b-instruct:free'/
+  );
+});
+
+test('runtime logs do not expose the filename or job URL', () => {
+  assert.doesNotMatch(analyzeSource, /console\.log\('Job URL:'/);
+  assert.doesNotMatch(analyzeSource, /console\.log\('CV file:'/);
+  assert.doesNotMatch(analyzeSource, /console\.log\('Fields:'/);
+});
