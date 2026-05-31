@@ -91,3 +91,11 @@ test('page uses the Wero-inspired editorial visual system', () => {
   assert.doesNotMatch(stylesSource, /#764ba2/i);
   assert.doesNotMatch(stylesSource, /background:\s*#172820/i);
 });
+
+test('hero introduction uses an editorial brief treatment', () => {
+  assert.match(indexSource, /class="hero-brief"/);
+  assert.match(indexSource, /class="hero-brief-label">\$ brief</);
+  assert.match(stylesSource, /\.hero-brief\s*{/);
+  assert.match(stylesSource, /\.hero-brief::before\s*{/);
+  assert.match(stylesSource, /\.hero-brief-label\s*{/);
+});

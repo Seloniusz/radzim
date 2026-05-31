@@ -105,11 +105,40 @@ body {
     transform: rotate(-1deg);
 }
 
-.header p {
-    max-width: 560px;
-    margin-top: 22px;
-    font-size: 1.05rem;
-    line-height: 1.55;
+.hero-brief {
+    position: relative;
+    max-width: 610px;
+    margin-top: 26px;
+    padding: 5px 0 5px 22px;
+    border-left: 4px solid var(--ink);
+}
+
+.hero-brief::before {
+    position: absolute;
+    top: -2px;
+    left: -8px;
+    width: 12px;
+    height: 12px;
+    background: var(--neon-green);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    content: '';
+}
+
+.hero-brief-label {
+    margin-bottom: 7px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.hero-brief p {
+    max-width: 590px;
+    font-size: 1.18rem;
+    font-weight: 600;
+    line-height: 1.45;
 }
 
 .form-section {
