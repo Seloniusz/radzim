@@ -168,6 +168,7 @@ async function extractCVText(file) {
 
 const CV_ANALYSIS_CHAR_LIMIT = Number.parseInt(process.env.CV_ANALYSIS_CHAR_LIMIT || '9000', 10);
 const JOB_ANALYSIS_CHAR_LIMIT = Number.parseInt(process.env.JOB_ANALYSIS_CHAR_LIMIT || '8000', 10);
+const OPENROUTER_TIMEOUT_MS = 90000;
 
 const LOW_VALUE_CV_PATTERNS = [
   /wyrażam zgodę/i,
@@ -557,7 +558,7 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
           'HTTP-Referer': APP_URL,
           'X-Title': 'Radzim'
         },
-        timeout: 30000
+        timeout: OPENROUTER_TIMEOUT_MS
       }
     );
 

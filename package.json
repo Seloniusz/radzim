@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "AI-powered CV analyzer",
   "scripts": {
+    "test": "node --test",
     "dev": "vercel dev",
     "deploy": "vercel --prod"
   },
