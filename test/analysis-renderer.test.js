@@ -6,6 +6,7 @@ const vm = require('node:vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+const stylesSource = fs.readFileSync(path.join(projectRoot, 'styles.css'), 'utf8');
 const { renderAnalysisReport } = require('../analysis-renderer');
 
 const analysis = {
@@ -75,4 +76,18 @@ test('exposes browser renderer even when a CommonJS module global exists', () =>
 
   assert.equal(typeof context.renderAnalysisReport, 'function');
   assert.equal(typeof context.module.exports.renderAnalysisReport, 'function');
+});
+
+test('page uses the Wero-inspired editorial visual system', () => {
+  assert.match(indexSource, /<link rel="stylesheet" href="\/styles\.css">/);
+  assert.match(stylesSource, /--paper:\s*#fff8dd/);
+  assert.match(stylesSource, /--ink:\s*#141414/);
+  assert.match(stylesSource, /--neon-green:\s*#7bff69/);
+  assert.match(stylesSource, /--cyan:\s*#82f3ff/);
+  assert.match(stylesSource, /--hot-pink:\s*#ff678b/);
+  assert.match(indexSource, /class="wordmark"/);
+  assert.match(indexSource, /class="loading-segments"/);
+  assert.doesNotMatch(stylesSource, /#667eea/i);
+  assert.doesNotMatch(stylesSource, /#764ba2/i);
+  assert.doesNotMatch(stylesSource, /background:\s*#172820/i);
 });

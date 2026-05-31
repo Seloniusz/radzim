@@ -1,467 +1,31 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radzim - Dopasuj się do oferty pracy</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1180px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .form-section {
-            padding: 40px 30px;
-            max-width: 860px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 30px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #333;
-            font-size: 1.1em;
-        }
-
-        input[type="url"], input[type="file"] {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-
-        input[type="url"]:focus, input[type="file"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            background: #f8f9fa;
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .file-input-wrapper:hover {
-            background: #e7e9fc;
-            border-color: #764ba2;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
-
-        .file-label {
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .file-name {
-            margin-top: 10px;
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .results {
-            display: none;
-            padding: 40px 30px;
-            background: #f4f7f5;
-        }
-
-        .results.active {
-            display: block;
-        }
-
-        .analysis-content {
-            color: #26352f;
-        }
-
-        .report-shell {
-            display: grid;
-            gap: 24px;
-        }
-
-        .report-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 24px;
-            align-items: center;
-            padding: 24px;
-            background: white;
-            border: 1px solid #dce7e2;
-            border-radius: 16px;
-            box-shadow: 0 10px 32px rgba(19, 49, 39, 0.07);
-        }
-
-        .report-kicker,
-        .report-command,
-        .match-score small {
-            color: #678077;
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .report-header h2 {
-            margin: 6px 0;
-            color: #1d2d27;
-            font-size: clamp(1.7rem, 4vw, 2.5rem);
-        }
-
-        .report-subtitle {
-            color: #63736d;
-            line-height: 1.6;
-        }
-
-        .match-score {
-            display: grid;
-            min-width: 136px;
-            gap: 4px;
-            padding: 18px;
-            color: #e7fff0;
-            background: #173027;
-            border-radius: 14px;
-            text-align: center;
-        }
-
-        .match-score span {
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 2.6rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-
-        .match-score small {
-            color: #77d99c;
-        }
-
-        .report-grid {
-            display: grid;
-            grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.35fr);
-            gap: 20px;
-            align-items: start;
-        }
-
-        .report-sidebar,
-        .report-main {
-            display: grid;
-            gap: 16px;
-        }
-
-        .skill-matrix {
-            padding: 20px;
-            color: #dafae6;
-            background: #172820;
-            border: 1px solid #2a4439;
-            border-radius: 16px;
-            box-shadow: 0 16px 34px rgba(23, 40, 32, 0.16);
-        }
-
-        .skill-matrix .report-command {
-            color: #77d99c;
-        }
-
-        .skill-matrix h3,
-        .keyword-panel h3,
-        .report-card h3 {
-            margin: 8px 0 14px;
-            font-size: 1.05rem;
-        }
-
-        .skill-list,
-        .report-list {
-            display: grid;
-            gap: 0;
-            list-style: none;
-        }
-
-        .skill-row {
-            padding: 12px 0;
-            border-top: 1px solid #2f483e;
-        }
-
-        .skill-meta {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 8px;
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 0.88rem;
-        }
-
-        .skill-meta strong {
-            color: #77d99c;
-        }
-
-        .skill-bar {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-        }
-
-        .skill-segment {
-            height: 8px;
-            background: #345046;
-            border-radius: 2px;
-        }
-
-        .skill-segment.active {
-            background: #47d583;
-            box-shadow: 0 0 12px rgba(71, 213, 131, 0.38);
-        }
-
-        .keyword-panel,
-        .report-card {
-            padding: 20px;
-            background: white;
-            border: 1px solid #dce7e2;
-            border-radius: 16px;
-            box-shadow: 0 10px 26px rgba(19, 49, 39, 0.06);
-        }
-
-        .keyword-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .keyword-tag {
-            padding: 7px 10px;
-            color: #12623e;
-            background: #e6f8ed;
-            border: 1px solid #c8ebd5;
-            border-radius: 999px;
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 0.8rem;
-            text-decoration: none;
-            transition: transform 0.2s, background 0.2s;
-        }
-
-        .keyword-tag:hover,
-        .keyword-tag:focus {
-            background: #d7f3e1;
-            outline: none;
-            transform: translateY(-2px);
-        }
-
-        .report-card {
-            position: relative;
-            padding-left: 24px;
-            overflow: hidden;
-        }
-
-        .report-card::before {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: 4px;
-            content: '';
-            background: #47d583;
-        }
-
-        .gap-card::before {
-            background: #f1b44c;
-        }
-
-        .action-card::before {
-            background: #667eea;
-        }
-
-        .report-list li {
-            position: relative;
-            padding: 11px 0 11px 20px;
-            color: #43554e;
-            border-top: 1px solid #edf2f0;
-            line-height: 1.55;
-        }
-
-        .report-list li::before {
-            position: absolute;
-            top: 12px;
-            left: 0;
-            color: #22975a;
-            content: '>';
-            font-family: Consolas, 'Courier New', monospace;
-            font-weight: 800;
-        }
-
-        .report-empty {
-            color: #71817b;
-        }
-
-        @media (max-width: 760px) {
-            body {
-                padding: 0;
-            }
-
-            .container {
-                min-height: 100vh;
-                border-radius: 0;
-            }
-
-            .results,
-            .form-section {
-                padding: 24px 18px;
-            }
-
-            .report-header {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            .match-score {
-                min-width: 0;
-            }
-
-            .report-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .error.active {
-            display: block;
-        }
-
-        .back-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .back-btn:hover {
-            background: #667eea;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📄 Analizator CV</h1>
-            <p>Dopasuj swoje CV do oferty pracy dzięki AI</p>
-        </div>
+        <header class="header">
+            <div class="masthead">
+                <div class="wordmark">radzim<span>.</span></div>
+                <div class="system-label">cv match system / 01</div>
+            </div>
+            <div class="header-copy">
+                <h1>DOPASUJ CV DO <span>OFERTY.</span></h1>
+                <p>Wgraj CV i link do ogłoszenia. Dostaniesz konkretny raport dopasowania, luki oraz następne kroki.</p>
+            </div>
+        </header>
 
         <form id="cvForm" class="form-section">
+            <div class="form-intro">
+                <span>$ start_analysis</span>
+                <strong>2 kroki</strong>
+            </div>
             <div class="form-group">
-                <label for="jobUrl">🔗 Link do oferty pracy</label>
+                <label for="jobUrl">01 / Link do oferty pracy</label>
                 <input 
                     type="url" 
                     id="jobUrl" 
@@ -472,7 +36,7 @@
             </div>
 
             <div class="form-group">
-                <label>📎 Twoje CV (PDF lub DOCX)</label>
+                <label>02 / Twoje CV (PDF lub DOCX)</label>
                 <div class="file-input-wrapper">
                     <input 
                         type="file" 
@@ -493,9 +57,12 @@
         </form>
 
         <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Analizuję CV i ofertę pracy...</p>
-            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">To może potrwać około 30 sekund</p>
+            <div class="loading-label">$ processing_match --cv --job</div>
+            <div class="loading-segments" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p><strong>Analizuję CV i ofertę pracy...</strong></p>
+            <p class="loading-note">To może potrwać około minuty.</p>
         </div>
 
         <div class="results" id="results">
@@ -566,7 +133,7 @@
         });
 
         function showError(message) {
-            errorDiv.textContent = '❌ ' + message;
+            errorDiv.textContent = 'Błąd: ' + message;
             errorDiv.classList.add('active');
         }
 
