@@ -3,6 +3,7 @@ const { formidable } = require('formidable');
 const fs = require('fs').promises;
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { normalizeAnalysisContent } = require('./analysis-response');
 
 // Dla Vercel - wyłącz bodyParser
 module.exports.config = {
@@ -549,7 +550,9 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
           }
         ],
         temperature: 0.4,
-        max_tokens: 1500
+        max_tokens: 1500,
+        response_format: { type: 'json_object' },
+        reasoning: { effort: 'none', exclude: true }
       },
       {
         headers: {
@@ -562,7 +565,7 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
       }
     );
 
-    return response.data.choices[0].message.content;
+    return normalizeAnalysisContent(response.data.choices[0].message.content);
   } catch (error) {
     console.error('OpenRouter error:', error.response?.data || error.message);
     

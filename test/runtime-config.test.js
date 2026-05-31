@@ -29,3 +29,14 @@ test('OpenRouter timeout leaves time for the function to return an error respons
     `expected at least 10000 ms response margin, got ${responseMarginMs} ms`
   );
 });
+
+test('OpenRouter request requires JSON output and excludes reasoning text', () => {
+  assert.match(
+    analyzeSource,
+    /response_format:\s*\{\s*type:\s*'json_object'\s*\}/
+  );
+  assert.match(
+    analyzeSource,
+    /reasoning:\s*\{\s*effort:\s*'none',\s*exclude:\s*true\s*\}/
+  );
+});
