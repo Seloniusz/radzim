@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const projectRoot = path.resolve(__dirname, '..');
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const stylesSource = fs.readFileSync(path.join(projectRoot, 'styles.css'), 'utf8');
+const rendererSource = fs.readFileSync(path.join(projectRoot, 'analysis-renderer.js'), 'utf8');
 const { renderAnalysisReport } = require('../analysis-renderer');
 
 const analysis = {
@@ -63,10 +64,6 @@ test('page parses structured analysis and renders HTML instead of raw JSON', () 
 });
 
 test('exposes browser renderer even when a CommonJS module global exists', () => {
-  const rendererSource = fs.readFileSync(
-    path.join(projectRoot, 'analysis-renderer.js'),
-    'utf8'
-  );
   const context = {
     module: { exports: {} },
     URL
@@ -94,8 +91,14 @@ test('page uses the Wero-inspired editorial visual system', () => {
 
 test('hero introduction uses an editorial brief treatment', () => {
   assert.match(indexSource, /class="hero-brief"/);
-  assert.match(indexSource, /class="hero-brief-label">\$ brief</);
+  assert.match(indexSource, /class="hero-brief-label">brief</);
   assert.match(stylesSource, /\.hero-brief\s*{/);
   assert.match(stylesSource, /\.hero-brief::before\s*{/);
   assert.match(stylesSource, /\.hero-brief-label\s*{/);
+});
+
+test('visible interface labels do not imitate shell commands', () => {
+  assert.doesNotMatch(indexSource, />\s*\$\s*[a-z_]/i);
+  assert.doesNotMatch(rendererSource, /\$\s*[a-z_]/i);
+  assert.doesNotMatch(rendererSource, /--[a-z_=-]+/i);
 });

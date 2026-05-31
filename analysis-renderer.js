@@ -79,7 +79,7 @@
 
     return `
       <section class="skill-matrix">
-        <div class="report-command">$ competency_matrix --evidence=cv</div>
+        <div class="report-command">kompetencje</div>
         <h3>Macierz kompetencji</h3>
         <ul class="skill-list">${skills.map(renderSkill).join('')}</ul>
       </section>`;
@@ -103,7 +103,7 @@
 
     return `
       <section class="keyword-panel">
-        <div class="report-command">$ sources --keywords</div>
+        <div class="report-command">słowa kluczowe</div>
         <h3>Słowa kluczowe</h3>
         <div class="keyword-list">${links}</div>
       </section>`;
@@ -134,9 +134,9 @@
             ${renderKeywords(report.keywords)}
           </aside>
           <div class="report-main">
-            ${renderCard('Mocne strony', '$ strengths --verified', report.whatWorks, 'strength-card')}
-            ${renderCard('Luki do uzupełnienia', '$ gaps --priority', report.whatsMissing, 'gap-card')}
-            ${renderCard('Następne kroki', '$ actions --next', report.concreteChanges, 'action-card')}
+            ${renderCard('Mocne strony', 'mocne strony', report.whatWorks, 'strength-card')}
+            ${renderCard('Luki do uzupełnienia', 'luki', report.whatsMissing, 'gap-card')}
+            ${renderCard('Następne kroki', 'następne kroki', report.concreteChanges, 'action-card')}
           </div>
         </div>
       </div>`;
