@@ -569,6 +569,7 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
         ],
         temperature: 0.4,
         max_tokens: 1500,
+        reasoning: { effort: 'none', exclude: true },
         provider: { zdr: true }
       },
       {
