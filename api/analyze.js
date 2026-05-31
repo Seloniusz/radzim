@@ -536,6 +536,12 @@ Odpowiedz w formacie JSON:
     {"term": "Agile", "url": "https://agilealliance.org/agile101/agile-glossary/"},
     {"term": "CI/CD", "url": "https://www.atlassian.com/devops/continuous-delivery-tutorials/continuous-integration"},
     {"term": "Test Automation", "url": "https://glossary.istqb.org"}
+  ],
+  "skillRatings": [
+    {"label": "Kompetencja dopasowana do oferty", "score": 4},
+    {"label": "Inna ważna kompetencja", "score": 3},
+    {"label": "Trzecia kompetencja", "score": 5},
+    {"label": "Czwarta kompetencja", "score": 2}
   ]
 }
 
@@ -545,6 +551,9 @@ Zwróć uwagę:
 - whatsMissing: lista kluczowych braków
 - concreteChanges: konkretne propozycje zmian w CV
 - keywords: słowa kluczowe z URL do profesjonalnych źródeł (Agile Alliance, ISTQB, Atlassian, itp.)
+- skillRatings: 4-6 najważniejszych kompetencji, które dobierz dynamicznie do analizowanej oferty
+- skillRatings[].label: krótka nazwa kompetencji
+- skillRatings[].score: liczba całkowita 1-5 określająca siłę dowodów w CV
 
 Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego tekstu.`
           }

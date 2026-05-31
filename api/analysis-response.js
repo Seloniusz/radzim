@@ -65,8 +65,19 @@ function validateAnalysis(analysis) {
       keyword => typeof keyword?.term === 'string' &&
         typeof keyword?.url === 'string'
     );
+  const hasValidSkillRatings = analysis?.skillRatings === undefined || (
+    Array.isArray(analysis.skillRatings) &&
+    analysis.skillRatings.length >= 4 &&
+    analysis.skillRatings.length <= 6 &&
+    analysis.skillRatings.every(
+      skill => typeof skill?.label === 'string' &&
+        Number.isInteger(skill?.score) &&
+        skill.score >= 1 &&
+        skill.score <= 5
+    )
+  );
 
-  if (!isValidPercentage || !hasValidLists || !hasValidKeywords) {
+  if (!isValidPercentage || !hasValidLists || !hasValidKeywords || !hasValidSkillRatings) {
     throw new Error('OpenRouter zwrócił nieprawidłowy format analizy. Spróbuj ponownie.');
   }
 

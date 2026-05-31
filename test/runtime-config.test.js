@@ -40,3 +40,9 @@ test('OpenRouter request requires JSON output and excludes reasoning text', () =
     /reasoning:\s*\{\s*effort:\s*'none',\s*exclude:\s*true\s*\}/
   );
 });
+
+test('OpenRouter prompt requests dynamic competency ratings', () => {
+  assert.match(analyzeSource, /"skillRatings": \[/);
+  assert.match(analyzeSource, /score: liczba całkowita 1-5/);
+  assert.match(analyzeSource, /dobierz dynamicznie do analizowanej oferty/);
+});
