@@ -30,15 +30,12 @@ test('OpenRouter timeout leaves time for the function to return an error respons
   );
 });
 
-test('OpenRouter request requires JSON output and excludes reasoning text', () => {
+test('OpenRouter request requires JSON output without unsupported reasoning parameters', () => {
   assert.match(
     analyzeSource,
     /response_format:\s*\{\s*type:\s*'json_object'\s*\}/
   );
-  assert.match(
-    analyzeSource,
-    /reasoning:\s*\{\s*effort:\s*'none',\s*exclude:\s*true\s*\}/
-  );
+  assert.doesNotMatch(analyzeSource, /reasoning:\s*\{/);
 });
 
 test('OpenRouter prompt requests dynamic competency ratings', () => {
