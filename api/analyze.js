@@ -495,7 +495,7 @@ function prepareJobForAnalysis(jobDescription) {
 
 async function analyzeWithAI(jobDescription, cvContent) {
   const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-  const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'qwen/qwen3-next-80b-a3b-instruct:free';
+  const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'z-ai/glm-4.5-air:free';
   const APP_URL = process.env.APP_URL || 'https://radzim.app';
 
   if (!OPENROUTER_API_KEY) {
@@ -569,8 +569,7 @@ Maksymalnie 8-10 punktów łącznie. Odpowiedź tylko JSON, bez dodatkowego teks
         ],
         temperature: 0.4,
         max_tokens: 1500,
-        response_format: { type: 'json_object' },
-        provider: { zdr: true, require_parameters: true }
+        provider: { zdr: true }
       },
       {
         headers: {

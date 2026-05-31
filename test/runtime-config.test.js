@@ -30,11 +30,9 @@ test('OpenRouter timeout leaves time for the function to return an error respons
   );
 });
 
-test('OpenRouter request requires JSON output without unsupported reasoning parameters', () => {
-  assert.match(
-    analyzeSource,
-    /response_format:\s*\{\s*type:\s*'json_object'\s*\}/
-  );
+test('OpenRouter prompt requests JSON without provider-specific format parameters', () => {
+  assert.match(analyzeSource, /Odpowiedź tylko JSON/);
+  assert.doesNotMatch(analyzeSource, /response_format:\s*\{/);
   assert.doesNotMatch(analyzeSource, /reasoning:\s*\{/);
 });
 
@@ -53,7 +51,7 @@ test('temporary CV files are deleted after every analysis attempt', () => {
 test('OpenRouter analysis enforces zero data retention routing', () => {
   assert.match(
     analyzeSource,
-    /provider:\s*\{\s*zdr:\s*true,\s*require_parameters:\s*true\s*\}/
+    /provider:\s*\{\s*zdr:\s*true\s*\}/
   );
   assert.match(
     analyzeSource,
@@ -61,7 +59,7 @@ test('OpenRouter analysis enforces zero data retention routing', () => {
   );
   assert.match(
     analyzeSource,
-    /process\.env\.OPENROUTER_MODEL \|\| 'qwen\/qwen3-next-80b-a3b-instruct:free'/
+    /process\.env\.OPENROUTER_MODEL \|\| 'z-ai\/glm-4\.5-air:free'/
   );
 });
 
