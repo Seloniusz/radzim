@@ -13,6 +13,8 @@ test('privacy policy explains CV processing and data subject rights', () => {
   assert.match(policySource, /kontakt@radzim\.app/);
   assert.match(policySource, /OpenRouter/);
   assert.match(policySource, /Vercel/);
+  assert.match(policySource, /Jina AI/);
+  assert.match(policySource, /publiczny URL oferty/i);
   assert.match(policySource, /dostawc/);
   assert.match(policySource, /CV/);
   assert.match(policySource, /nie jest zapisywan[ey] w bazie danych/i);

@@ -2,8 +2,8 @@
 const { formidable } = require('formidable');
 const fs = require('fs').promises;
 const axios = require('axios');
-const cheerio = require('cheerio');
 const { normalizeAnalysisContent } = require('./analysis-response');
+const { scrapeJobOffer } = require('./job-offer');
 
 // Dla Vercel - wyłącz bodyParser
 module.exports.config = {
@@ -97,42 +97,6 @@ module.exports = async function handler(req, res) {
     );
   }
 };
-
-async function scrapeJobOffer(url) {
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      timeout: 15000,
-      maxRedirects: 5
-    });
-
-    const $ = cheerio.load(response.data);
-    
-    // Usuń niepotrzebne elementy
-    $('script, style, nav, header, footer, iframe, noscript').remove();
-    
-    // Pobierz główny tekst
-    let text = $('body').text()
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Ogranicz długość
-    if (text.length > 8000) {
-      text = text.substring(0, 8000);
-    }
-
-    if (text.length < 100) {
-      throw new Error('Zbyt mało treści pobranej ze strony oferty');
-    }
-
-    return text;
-  } catch (error) {
-    console.error('Scrape error:', error.message);
-    throw new Error(`Nie udało się pobrać oferty: ${error.message}`);
-  }
-}
 
 async function extractCVText(file) {
   try {
