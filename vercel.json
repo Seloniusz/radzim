@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.radzim.app"
+        }
+      ],
+      "destination": "https://radzim.app/$1",
+      "permanent": true
+    }
+  ],
   "functions": {
     "api/**/*.js": {
       "maxDuration": 120
