@@ -1,0 +1,15 @@
+{
+  "name": "Radzim",
+  "short_name": "Radzim",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#fff8dd",
+  "background_color": "#fff8dd",
+  "display": "standalone"
+}
+

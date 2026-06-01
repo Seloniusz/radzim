@@ -8,6 +8,10 @@ const canonicalURL = 'https://radzim.app/';
 const indexSource = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const robotsSource = fs.readFileSync(path.join(projectRoot, 'robots.txt'), 'utf8');
 const sitemapSource = fs.readFileSync(path.join(projectRoot, 'sitemap.xml'), 'utf8');
+const manifestPath = path.join(projectRoot, 'site.webmanifest');
+const faviconSvgPath = path.join(projectRoot, 'favicon.svg');
+const faviconIcoPath = path.join(projectRoot, 'favicon.ico');
+const appleTouchIconPath = path.join(projectRoot, 'apple-touch-icon.png');
 const vercelConfig = JSON.parse(
   fs.readFileSync(path.join(projectRoot, 'vercel.json'), 'utf8')
 );
@@ -51,4 +55,22 @@ test('crawler files and www redirect use the canonical domain', () => {
   assert.deepEqual(vercelConfig.redirects[0].has, [
     { type: 'host', value: 'www.radzim.app' }
   ]);
+});
+
+test('landing page exposes favicon assets for browsers and search results', () => {
+  assert.match(indexSource, /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml">/);
+  assert.match(indexSource, /<link rel="icon" href="\/favicon\.ico" sizes="any">/);
+  assert.match(indexSource, /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png">/);
+  assert.match(indexSource, /<link rel="manifest" href="\/site\.webmanifest">/);
+
+  assert.ok(fs.existsSync(faviconSvgPath), 'favicon.svg is missing');
+  assert.ok(fs.existsSync(faviconIcoPath), 'favicon.ico is missing');
+  assert.ok(fs.existsSync(appleTouchIconPath), 'apple-touch-icon.png is missing');
+  assert.ok(fs.existsSync(manifestPath), 'site.webmanifest is missing');
+
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(manifest.name, 'Radzim');
+  assert.equal(manifest.short_name, 'Radzim');
+  assert.equal(manifest.icons[0].src, '/apple-touch-icon.png');
+  assert.equal(manifest.icons[0].sizes, '180x180');
 });
