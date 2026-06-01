@@ -97,6 +97,18 @@ test('hero introduction uses an editorial brief treatment', () => {
   assert.match(stylesSource, /\.hero-brief-label\s*{/);
 });
 
+test('hero explains AI-assisted CV scoring guidance', () => {
+  assert.match(
+    indexSource,
+    /class="hero-ai-note">ZA POMOCĄ SZTUCZNEJ INTELIGENCJI</
+  );
+  assert.match(
+    indexSource,
+    /instrukcje, co uzupełnić, aby algorytmy rekrutacyjne wyżej oceniły Twoje CV/
+  );
+  assert.match(stylesSource, /\.hero-ai-note\s*{/);
+});
+
 test('visible interface labels do not imitate shell commands', () => {
   assert.doesNotMatch(indexSource, />\s*\$\s*[a-z_]/i);
   assert.doesNotMatch(rendererSource, /\$\s*[a-z_]/i);

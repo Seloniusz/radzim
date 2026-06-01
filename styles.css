@@ -131,10 +131,26 @@ body {
     transform: rotate(-1deg);
 }
 
+.hero-ai-note {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 6px 10px;
+    background: var(--cyan);
+    border: var(--line);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    transform: rotate(-1deg);
+}
+
 .hero-brief {
     position: relative;
     max-width: 610px;
-    margin-top: 26px;
+    margin-top: 20px;
     padding: 5px 0 5px 22px;
     border-left: 4px solid var(--ink);
 }
